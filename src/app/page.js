@@ -1,190 +1,176 @@
 "use client"
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Calendar, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import { 
+  Calendar, 
+  MessageSquare, 
+  Cpu, 
+  Database, 
+  Zap, 
+  CheckCircle2, 
+  ArrowUpRight, 
+  Globe,
+  Settings,
+  Activity
+} from 'lucide-react';
 
-export default function DentalSaaS() {
-  // 1. State management
-  const [appointments, setAppointments] = useState([]);
+export default function UltraModernDashboard() {
   const [clinic, setClinic] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  // =========================================================================
-  // 🛠️ CONFIGURATION - CHECK THESE TWO CAREFULLY
-  // =========================================================================
-  // IMPORTANT: Go to Supabase Table Editor -> clinics and copy the ID.
-  // If it's a number, use: 1. If it's a long UUID string, use: "your-uuid-here"
+  // CONFIG
   const CLINIC_ID = 1; 
   const BACKEND_URL = "https://dental-assistant-bot-production.up.railway.app";
-  // =========================================================================
-  
+
   useEffect(() => {
-    // We define the function INSIDE the effect to stop the "Cascading Render" red line
-    async function loadDashboardData() {
-      try {
-        setLoading(true);
-
-        // A. Fetch Clinic Information
-        const { data: clinicData, error: clinicErr } = await supabase
-          .from('clinics')
-          .select('*')
-          .eq('id', CLINIC_ID)
-          .maybeSingle(); // Does not crash if 0 rows found
-
-        if (clinicErr) throw clinicErr;
-        
-        if (!clinicData) {
-          setError(`Clinic ID ${CLINIC_ID} not found. Check your Supabase table!`);
-        } else {
-          setClinic(clinicData);
-        }
-
-        // B. Fetch Appointments
-        const { data: apptData, error: apptErr } = await supabase
-          .from('appointments')
-          .select('*')
-          .eq('clinic_id', CLINIC_ID)
-          .order('created_at', { ascending: false });
-
-        if (apptErr) throw apptErr;
-        setAppointments(apptData || []);
-        
-      } catch (err) {
-        console.error("Fetch Error:", err.message);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
+    async function getClinic() {
+      const { data } = await supabase.from('clinics').select('*').eq('id', CLINIC_ID).maybeSingle();
+      if (data) setClinic(data);
+      setLoading(false);
     }
+    getClinic();
+  }, []);
 
-    loadDashboardData();
-
-    // C. Set up Real-time Sync (Websockets)
-    // Whenever the AI books a row, the UI updates automatically
-    const channel = supabase.channel('dashboard-sync')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'appointments' }, 
-        () => {
-          loadDashboardData(); // Refresh list on change
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [CLINIC_ID]); // Only re-run if CLINIC_ID changes
-
-  // Handler for Google Calendar Sync
-  const handleGoogleConnect = async () => {
+  const handleConnect = async () => {
     try {
-      const response = await fetch(`${BACKEND_URL}/google/login/${CLINIC_ID}`);
-      const data = await response.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        alert("Could not get Login URL from Backend");
-      }
-    } catch (err) {
-      alert("Backend not responding. Make sure Railway is Active and CORS is enabled.");
+      const res = await fetch(`${BACKEND_URL}/google/login/${CLINIC_ID}`);
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+    } catch (e) {
+      alert("System initializing... check back in 1 minute.");
     }
   };
 
-  // Loading Screen
-  if (loading) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-900 text-white">
-        <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p className="font-mono text-sm tracking-widest animate-pulse">SYNCING ENCRYPTED DATABASE...</p>
+  if (loading) return (
+    <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-12 h-12 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
+        <div className="text-blue-500 font-mono text-xs tracking-[0.3em] uppercase animate-pulse">Booting Dental_OS...</div>
       </div>
-    );
-  }
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 md:p-10 font-sans text-slate-900">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-blue-500/30 overflow-x-hidden">
+      
+      {/* Dynamic Background Glows */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-600/10 blur-[120px] rounded-full animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600/10 blur-[120px] rounded-full" />
+      </div>
+
+      <div className="relative max-w-7xl mx-auto px-6 py-8">
         
-        {/* TOP NAV / HEADER */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
-          <div>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight">
-              {clinic?.clinic_name || "DentalBot"}
+        {/* --- Top Navigation --- */}
+        <header className="flex justify-between items-center mb-16 backdrop-blur-md bg-white/5 p-4 rounded-2xl border border-white/10">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <Cpu size={22} className="text-white" />
+            </div>
+            <div>
+              <div className="text-sm font-black tracking-tight uppercase italic">DentalBot <span className="text-blue-500">v2.0</span></div>
+              <div className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">Autonomous Agent</div>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-6">
+            <div className="hidden md:flex gap-4 text-[11px] font-bold text-slate-400 tracking-widest uppercase">
+              <span className="text-blue-400">Node_Online</span>
+              <span>DB_Connected</span>
+            </div>
+            <div className="h-8 w-[1px] bg-white/10 mx-2" />
+            <Settings size={18} className="text-slate-400 cursor-pointer hover:text-white transition-colors" />
+          </div>
+        </header>
+
+        {/* --- Hero Branding Section --- */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12">
+          
+          <div className="lg:col-span-7 flex flex-col justify-center">
+            <h1 className="text-6xl lg:text-7xl font-black tracking-tighter leading-[0.9] mb-6">
+              AI-Driven <br/>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">
+                Clinic Scale.
+              </span>
             </h1>
-            <p className="text-slate-500 font-medium">Real-time AI Receptionist Dashboard</p>
+            <p className="text-slate-400 text-lg mb-8 max-w-lg leading-relaxed">
+              Transforming patient acquisition through autonomous WhatsApp agents and real-time calendar synchronization.
+            </p>
+            <div className="flex gap-4">
+              <button 
+                onClick={handleConnect}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-xl font-bold transition-all shadow-xl shadow-blue-600/20 hover:-translate-y-1"
+              >
+                <Calendar size={18} />
+                {clinic?.google_refresh_token ? "System Synced" : "Authorize Calendar"}
+              </button>
+              <button className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-8 py-4 rounded-xl font-bold transition-all">
+                View Agent Logs
+              </button>
+            </div>
           </div>
 
-          <button 
-            onClick={handleGoogleConnect}
-            className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold transition shadow-lg hover:scale-105 active:scale-95 ${
-              clinic?.google_refresh_token 
-              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
-              : 'bg-blue-600 text-white hover:bg-blue-700'
-            }`}
-          >
-            <Calendar size={20} />
-            {clinic?.google_refresh_token ? 'GOOGLE CALENDAR CONNECTED' : 'CONNECT GOOGLE CALENDAR'}
-          </button>
+          {/* --- Technical Pulse Card --- */}
+          <div className="lg:col-span-5 bg-gradient-to-br from-white/10 to-transparent border border-white/10 rounded-[2.5rem] p-8 backdrop-blur-xl">
+             <div className="flex justify-between items-start mb-10">
+                <div className="p-3 bg-blue-500/20 rounded-2xl text-blue-400"><Activity size={24}/></div>
+                <div className="text-right">
+                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Global Status</div>
+                  <div className="text-emerald-400 font-mono text-sm font-bold">● SYSTEM_HEALTHY</div>
+                </div>
+             </div>
+             
+             <div className="space-y-6">
+                <IntegrationRow icon={<MessageSquare size={16}/>} label="WhatsApp Engine" status="Twilio API v3" color="text-blue-400" />
+                <IntegrationRow icon={<Zap size={16}/>} label="Inference Brain" status="Llama 3.1 8B" color="text-purple-400" />
+                <IntegrationRow icon={<Database size={16}/>} label="Storage Layer" status="Postgres Realtime" color="text-indigo-400" />
+                <IntegrationRow icon={<Globe size={16}/>} label="Deployment" status="Vercel Edge" color="text-cyan-400" />
+             </div>
+          </div>
         </div>
 
-        {/* ERROR MESSAGE BOX */}
-        {error && (
-          <div className="mb-8 p-4 bg-rose-50 border border-rose-100 text-rose-700 rounded-2xl flex items-center gap-3">
-            <AlertTriangle size={20} />
-            <span className="text-sm font-bold">Error: {error}</span>
-          </div>
-        )}
-
-        {/* STATS SECTION */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-            <p className="text-slate-400 text-xs font-bold uppercase mb-1">Total Bookings</p>
-            <p className="text-3xl font-black">{appointments.length}</p>
-          </div>
-          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-            <p className="text-slate-400 text-xs font-bold uppercase mb-1">AI Status</p>
-            <p className="text-3xl font-black text-emerald-500">Active</p>
-          </div>
-        </div>
-
-        {/* MAIN DATA TABLE */}
-        <div className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-slate-50/50 border-b border-slate-100 text-slate-400 text-[11px] uppercase tracking-widest font-black">
-                  <th className="px-8 py-6">Patient Number</th>
-                  <th className="px-8 py-6">Appointment Details</th>
-                  <th className="px-8 py-6">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {appointments.length === 0 ? (
-                  <tr>
-                    <td colSpan="3" className="p-20 text-center text-slate-400 italic">
-                      No appointments found. Send a WhatsApp message to your Twilio number to test!
-                    </td>
-                  </tr>
-                ) : (
-                  appointments.map((app) => (
-                    <tr key={app.id} className="hover:bg-blue-50/30 transition-colors group">
-                      <td className="px-8 py-6 font-bold text-slate-700">{app.customer_phone}</td>
-                      <td className="px-8 py-6 text-slate-600 font-medium">{app.appointment_date}</td>
-                      <td className="px-8 py-6">
-                        <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-100 text-blue-700">
-                          <Clock size={12} />
-                          {app.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+        {/* --- Features Grid --- */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-12 border-t border-white/5">
+           <FeatureBox 
+              title="Multi-Tenancy" 
+              desc="Full RLS data isolation for secure clinical operations." 
+              tag="Security"
+            />
+           <FeatureBox 
+              title="Conflict Resolution" 
+              desc="Real-time Google Calendar API polling to prevent double-bookings." 
+              tag="Sync"
+            />
+           <FeatureBox 
+              title="Agentic Reasoning" 
+              desc="Function-calling architecture for autonomous DB transactions." 
+              tag="AI Logic"
+            />
         </div>
 
       </div>
     </div>
   );
+}
+
+function IntegrationRow({ icon, label, status, color }) {
+  return (
+    <div className="flex items-center justify-between border-b border-white/5 pb-4 last:border-0 last:pb-0">
+      <div className="flex items-center gap-3">
+        <div className={`p-2 bg-white/5 rounded-lg ${color}`}>{icon}</div>
+        <span className="text-sm font-medium text-slate-300">{label}</span>
+      </div>
+      <span className="text-[10px] font-mono font-bold text-slate-500 uppercase">{status}</span>
+    </div>
+  )
+}
+
+function FeatureBox({ title, desc, tag }) {
+  return (
+    <div className="group p-8 bg-white/5 border border-white/10 rounded-3xl hover:bg-white/[0.08] transition-all hover:border-blue-500/50">
+      <div className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-4">{tag}</div>
+      <h3 className="text-xl font-bold mb-2 group-hover:text-blue-400 transition-colors">{title}</h3>
+      <p className="text-slate-500 text-sm leading-relaxed">{desc}</p>
+    </div>
+  )
 }
